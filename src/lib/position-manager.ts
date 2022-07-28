@@ -16,10 +16,9 @@ export enum PositionStatus {
 }
 
 interface IEmissions {
-  connect: () => void;
-  enterPosition: (idk: any) => void
-  exitPosition: (idk: any) => void
-  complete: (idk: any) => void
+  enterPosition: (data: { bar: IBar, position: IPosition }) => void
+  exitPosition: (data: { bar: IBar, position: IPosition }) => void
+  complete: (trades: ITrade[]) => void
 }
 
 export class PositionManager<
@@ -150,8 +149,6 @@ export class PositionManager<
           holdingPeriod: 0,
         };
 
-        this.emit('enterPosition', { lol: true });
-
         if (this.strategy.stopLoss) {
           const initialStopDistance = this.strategy.stopLoss({
             entryPrice: entryPrice,
@@ -246,6 +243,7 @@ export class PositionManager<
               : entryPrice - profitDistance;
         }
 
+        this.emit('enterPosition', { bar, position: this.openPosition });
         this.positionStatus = PositionStatus.Position;
         break;
 
@@ -389,6 +387,7 @@ export class PositionManager<
       );
       this.completedTrades.push(lastTrade);
     }
+    this.emit('complete', this.completedTrades)
   }
 
   /**
@@ -432,6 +431,7 @@ export class PositionManager<
     exitPrice: number,
     exitReason: string
   ) {
+    this.emit('exitPosition', { bar, position: this.openPosition! });
     const trade = this.finalizePosition(
       this.openPosition!,
       bar.time,
