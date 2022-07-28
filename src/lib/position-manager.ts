@@ -27,7 +27,7 @@ export class PositionManager<
   /** Records the price for conditional intrabar entry. */
   public conditionalEntryPrice: number | undefined;
   /** Strategy lookback period. */
-  public lookbackPeriod = this.strategy.lookbackPeriod || 1;
+  public lookbackPeriod = 1;
   /** Create a circular buffer to use for the lookback. */
   public lookbackBuffer = new CBuffer(this.lookbackPeriod);
   /** Tracks trades that have been closed. */
@@ -42,18 +42,14 @@ export class PositionManager<
   }
 
   private _strategy!: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>;
-  public get strategy(): IStrategy<
-    InputBarT,
-    IndicatorBarT,
-    ParametersT,
-    IndexT
-  > {
+  public get strategy(): IStrategy<InputBarT,IndicatorBarT,ParametersT,IndexT> {
     return this._strategy;
   }
   public set strategy(
     strategy: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>
   ) {
     this._strategy = strategy;
+    this.lookbackPeriod = this.strategy.lookbackPeriod || 1;
   }
 
   public get strategyParameters(): ParametersT {

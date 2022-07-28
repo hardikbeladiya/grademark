@@ -190,13 +190,13 @@ export function backtest<InputBarT extends IBar, IndicatorBarT extends InputBarT
     //
     // Close the current open position.
     //
-    function closePosition(bar: InputBarT, exitPrice: number, exitReason: string) {
-        const trade = finalizePosition(openPosition!, bar.time, exitPrice, exitReason);
-        completedTrades.push(trade!);
-        // Reset to no open position;
-        openPosition = null;
-        positionStatus = PositionStatus.None;
-    }
+    // function closePosition(bar: InputBarT, exitPrice: number, exitReason: string) {
+    //     const trade = finalizePosition(openPosition!, bar.time, exitPrice, exitReason);
+    //     completedTrades.push(trade!);
+    //     // Reset to no open position;
+    //     openPosition = null;
+    //     positionStatus = PositionStatus.None;
+    // }
 
     const positionManager = new PositionManager(strategy);
 
@@ -204,9 +204,11 @@ export function backtest<InputBarT extends IBar, IndicatorBarT extends InputBarT
         positionManager.addBar(bar);
     }
 
+    console.log('Bars exhausted');
+
     if (positionManager.openPosition) {
         const lastBar = indicatorsSeries.last();
-        const lastTrade = finalizePosition(positionManager.openPosition, lastBar.time, lastBar.close, "finalize");
+        const lastTrade = positionManager.finalizePosition(positionManager.openPosition, lastBar.time, lastBar.close, "finalize");
         positionManager.completedTrades.push(lastTrade);
     }
 
