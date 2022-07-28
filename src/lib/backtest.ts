@@ -1,8 +1,9 @@
-import { ITrade } from "./trade";
-import { IDataFrame, DataFrame } from 'data-forge';
-import { IStrategy, IBar, IPosition } from "..";
 import { assert } from "chai";
+import { IDataFrame } from 'data-forge';
+import { IBar, IPosition, IStrategy } from "..";
+import { PositionManager } from "./position-manager";
 import { IEnterPositionOptions, TradeDirection } from "./strategy";
+import { ITrade } from "./trade";
 import { isObject } from "./utils";
 const CBuffer = require('CBuffer');
 
@@ -197,240 +198,18 @@ export function backtest<InputBarT extends IBar, IndicatorBarT extends InputBarT
         positionStatus = PositionStatus.None;
     }
 
+    const positionManager = new PositionManager(strategy);
+
     for (const bar of indicatorsSeries) {
-        lookbackBuffer.push(bar);
-
-        if (lookbackBuffer.length < lookbackPeriod) {
-            continue; // Don't invoke rules until lookback period is satisfied.
-        }
-
-        switch (+positionStatus) { //TODO: + is a work around for TS switch stmt with enum.
-            case PositionStatus.None:
-                strategy.entryRule(enterPosition, {
-                    bar: bar, 
-                    lookback: new DataFrame<number, IndicatorBarT>(lookbackBuffer.data), 
-                    parameters: strategyParameters
-                });
-                break;
-
-            case PositionStatus.Enter:
-                assert(openPosition === null, "Expected there to be no open position initialised yet!");
-
-                if (conditionalEntryPrice !== undefined) {
-                    // Must breach conditional entry price before entering position.
-                    if (positionDirection === TradeDirection.Long) {
-                        if (bar.high < conditionalEntryPrice) {
-                            break;
-                        }
-                    }
-                    else {
-                        if (bar.low > conditionalEntryPrice) {
-                            break;
-                        }
-                    }
-                }
-
-                const entryPrice = bar.open;
-                
-                openPosition = {
-                    direction: positionDirection,
-                    entryTime: bar.time,
-                    entryPrice: entryPrice,
-                    growth: 1,
-                    profit: 0,
-                    profitPct: 0,
-                    holdingPeriod: 0,
-                };
-
-                if (strategy.stopLoss) {
-                    const initialStopDistance = strategy.stopLoss({
-                        entryPrice: entryPrice,
-                        position: openPosition,
-                        bar: bar, 
-                        lookback: new DataFrame<number, InputBarT>(lookbackBuffer.data), 
-                        parameters: strategyParameters
-                    });
-                    openPosition.initialStopPrice = openPosition.direction === TradeDirection.Long
-                        ? entryPrice - initialStopDistance 
-                        : entryPrice + initialStopDistance;
-                    openPosition.curStopPrice = openPosition.initialStopPrice;
-                }
-
-                if (strategy.trailingStopLoss) {
-                    const trailingStopDistance = strategy.trailingStopLoss({
-                        entryPrice: entryPrice, 
-                        position: openPosition,
-                        bar: bar, 
-                        lookback: new DataFrame<number, InputBarT>(lookbackBuffer.data), 
-                        parameters: strategyParameters
-                    });
-                    const trailingStopPrice = openPosition.direction === TradeDirection.Long
-                        ? entryPrice - trailingStopDistance
-                        : entryPrice + trailingStopDistance;
-                    if (openPosition.initialStopPrice === undefined) {
-                        openPosition.initialStopPrice = trailingStopPrice;
-                    }
-                    else {
-                        openPosition.initialStopPrice = openPosition.direction === TradeDirection.Long
-                            ? Math.max(openPosition.initialStopPrice, trailingStopPrice)
-                            : Math.min(openPosition.initialStopPrice, trailingStopPrice);
-                    }
-
-                    openPosition.curStopPrice = openPosition.initialStopPrice;
-
-                    if (options.recordStopPrice) {
-                        openPosition.stopPriceSeries = [
-                            {
-                                time: bar.time,
-                                value: openPosition.curStopPrice
-                            },
-                        ];
-                    }
-                }
-
-                if (openPosition.curStopPrice !== undefined) {
-                    openPosition.initialUnitRisk = openPosition.direction === TradeDirection.Long
-                        ? entryPrice - openPosition.curStopPrice
-                        : openPosition.curStopPrice - entryPrice;
-                    openPosition.initialRiskPct = (openPosition.initialUnitRisk / entryPrice) * 100;
-                    openPosition.curRiskPct = openPosition.initialRiskPct;
-                    openPosition.curRMultiple = 0;
-
-                    if (options.recordRisk) {
-                        openPosition.riskSeries = [
-                            {
-                                time: bar.time,
-                                value: openPosition.curRiskPct
-                            },
-                        ];
-                    }
-                }
-
-                if (strategy.profitTarget) {
-                    const profitDistance = strategy.profitTarget({
-                        entryPrice: entryPrice, 
-                        position: openPosition,
-                        bar: bar, 
-                        lookback: new DataFrame<number, InputBarT>(lookbackBuffer.data), 
-                        parameters: strategyParameters
-                    });
-                    openPosition.profitTarget = openPosition.direction === TradeDirection.Long
-                        ? entryPrice + profitDistance
-                        : entryPrice - profitDistance;
-                }
-
-                positionStatus = PositionStatus.Position;
-                break;
-
-            case PositionStatus.Position:
-                assert(openPosition !== null, "Expected open position to already be initialised!");
-
-                if (openPosition!.curStopPrice !== undefined) {
-                    if (openPosition!.direction === TradeDirection.Long) {
-                        if (bar.low <= openPosition!.curStopPrice!) {
-                            // Exit intrabar due to stop loss.
-                            closePosition(bar, openPosition!.curStopPrice!, "stop-loss");
-                            break;
-                        }
-                    }
-                    else {
-                        if (bar.high >= openPosition!.curStopPrice!) {
-                            // Exit intrabar due to stop loss.
-                            closePosition(bar, openPosition!.curStopPrice!, "stop-loss");
-                            break;
-                        }
-                    }
-                }
-
-                if (strategy.trailingStopLoss !== undefined) {
-                    //
-                    // Revaluate trailing stop loss.
-                    //
-                    const trailingStopDistance = strategy.trailingStopLoss({
-                        entryPrice: openPosition!.entryPrice, 
-                        position: openPosition!,
-                        bar: bar, 
-                        lookback: new DataFrame<number, InputBarT>(lookbackBuffer.data), 
-                        parameters: strategyParameters
-                    });
-                    
-                    if (openPosition!.direction === TradeDirection.Long) {
-                        const newTrailingStopPrice = bar.close - trailingStopDistance;
-                        if (newTrailingStopPrice > openPosition!.curStopPrice!) {
-                            openPosition!.curStopPrice = newTrailingStopPrice;
-                        }
-                    }
-                    else {
-                        const newTrailingStopPrice = bar.close + trailingStopDistance;
-                        if (newTrailingStopPrice < openPosition!.curStopPrice!) {
-                            openPosition!.curStopPrice = newTrailingStopPrice;
-                        }
-                    }
-
-                    if (options.recordStopPrice) {
-                        openPosition!.stopPriceSeries!.push({
-                            time: bar.time,
-                            value: openPosition!.curStopPrice!
-                        });
-                    }
-                }
-
-                if (openPosition!.profitTarget !== undefined) {
-                    if (openPosition!.direction === TradeDirection.Long) {
-                        if (bar.high >= openPosition!.profitTarget!) {
-                            // Exit intrabar due to profit target.
-                            closePosition(bar, openPosition!.profitTarget!, "profit-target");
-                            break;
-                        }
-                    }
-                    else {
-                        if (bar.low <= openPosition!.profitTarget!) {
-                            // Exit intrabar due to profit target.
-                            closePosition(bar, openPosition!.profitTarget!, "profit-target");
-                            break;
-                        }
-                    }
-                }
-                
-                updatePosition(openPosition!, bar);
-                
-                if (openPosition!.curRiskPct !== undefined && options.recordRisk) {
-                    openPosition!.riskSeries!.push({
-                        time: bar.time,
-                        value: openPosition!.curRiskPct!
-                    });
-                }
-
-                if (strategy.exitRule) {
-                    strategy.exitRule(exitPosition, {
-                        entryPrice: openPosition!.entryPrice,
-                        position: openPosition!, 
-                        bar: bar, 
-                        lookback: new DataFrame<number, IndicatorBarT>(lookbackBuffer.data), 
-                        parameters: strategyParameters
-                    });
-                }
-
-                break;
-
-            case PositionStatus.Exit:
-                assert(openPosition !== null, "Expected open position to already be initialised!");
-
-                closePosition(bar, bar.open, "exit-rule");
-                break;
-                
-            default:
-                throw new Error("Unexpected state!");
-        }
+        positionManager.addBar(bar);
     }
 
-    if (openPosition) {
-        // Finalize open position.
+    if (positionManager.openPosition) {
         const lastBar = indicatorsSeries.last();
-        const lastTrade = finalizePosition(openPosition, lastBar.time, lastBar.close, "finalize");
-        completedTrades.push(lastTrade);
+        const lastTrade = finalizePosition(positionManager.openPosition, lastBar.time, lastBar.close, "finalize");
+        positionManager.completedTrades.push(lastTrade);
     }
 
-    return completedTrades;
+    return positionManager.completedTrades;
 }
 
