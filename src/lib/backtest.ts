@@ -198,7 +198,7 @@ export function backtest<InputBarT extends IBar, IndicatorBarT extends InputBarT
     //     positionStatus = PositionStatus.None;
     // }
 
-    const positionManager = new PositionManager(strategy);
+    const positionManager = new PositionManager(strategy, options);
 
     for (const bar of indicatorsSeries) {
         positionManager.addBar(bar);

@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { backtest } from '../../lib/backtest';
 import { DataFrame, IDataFrame } from 'data-forge';
-import { IBar } from '../../lib/bar';
-import { IStrategy, EnterPositionFn, IEntryRuleArgs, ExitPositionFn, IExitRuleArgs, TradeDirection } from '../../lib/strategy';
 import * as moment from 'dayjs';
+import { backtest } from '../../lib/backtest';
+import { IBar } from '../../lib/bar';
+import { EnterPositionFn, ExitPositionFn, IEntryRuleArgs, IExitRuleArgs, IStrategy, TradeDirection } from '../../lib/strategy';
 
 describe("backtest long", () => {
 

@@ -21,24 +21,31 @@ export class PositionManager<
   IndexT
 > {
   /** Status of the position at any give time. */
-  public positionStatus: PositionStatus = PositionStatus.None;
+  private _positionStatus: PositionStatus = PositionStatus.None;
+  public get positionStatus(): PositionStatus {
+    return this._positionStatus;
+  }
+  public set positionStatus(status: PositionStatus) {
+    this._positionStatus = status;
+  }
+
   /** Records the direction of a position/trade. */
   public positionDirection: TradeDirection = TradeDirection.Long;
   /** Records the price for conditional intrabar entry. */
   public conditionalEntryPrice: number | undefined;
   /** Strategy lookback period. */
   public lookbackPeriod = 1;
-  /** Create a circular buffer to use for the lookback. */
-  public lookbackBuffer = new CBuffer(this.lookbackPeriod);
   /** Tracks trades that have been closed. */
   public completedTrades: ITrade[] = [];
+  /** Create a circular buffer to use for the lookback. */
+  public lookbackBuffer = new CBuffer(1);
 
   private _options: IBacktestOptions = {};
-  public set options(options: IBacktestOptions) {
-    this._options = options;
-  }
   public get options(): IBacktestOptions {
     return this._options;
+  }
+  public set options(options: IBacktestOptions) {
+    this._options = options;
   }
 
   private _strategy!: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>;
@@ -49,11 +56,10 @@ export class PositionManager<
     strategy: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>
   ) {
     this._strategy = strategy;
-    this.lookbackPeriod = this.strategy.lookbackPeriod || 1;
   }
 
   public get strategyParameters(): ParametersT {
-    return this.strategyParameters || ({} as ParametersT);
+    return this.strategy.parameters || ({} as ParametersT);
   }
 
   private _openPosition: IPosition | null = null;
@@ -65,9 +71,15 @@ export class PositionManager<
   }
 
   constructor(
-    strategy: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>
+    strategy: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>,
+    options?: IBacktestOptions
   ) {
     this.strategy = strategy;
+    this.lookbackPeriod = this.strategy.lookbackPeriod || 1;
+    this.lookbackBuffer = new CBuffer(this.lookbackPeriod);
+    if (options) {
+      this.options = options;
+    }
   }
 
   public addBar(bar: IndicatorBarT) {
@@ -79,6 +91,7 @@ export class PositionManager<
     
     switch (+this.positionStatus) {
       case PositionStatus.None:
+        
         this.strategy.entryRule(this._enterPosition, {
           bar: bar,
           lookback: new DataFrame<number, IndicatorBarT>(
@@ -221,7 +234,7 @@ export class PositionManager<
           this.openPosition !== null,
           "Expected open position to already be initialized!"
         );
-
+        
         if (this.openPosition!.curStopPrice !== undefined) {
           if (this.openPosition!.direction === TradeDirection.Long) {
             if (bar.low <= this.openPosition!.curStopPrice!) {
@@ -246,10 +259,9 @@ export class PositionManager<
           }
         }
 
+        
+        // Revaluate trailing stop loss.
         if (this.strategy.trailingStopLoss !== undefined) {
-          //
-          // Revaluate trailing stop loss.
-          //
           const trailingStopDistance = this.strategy.trailingStopLoss({
             entryPrice: this.openPosition!.entryPrice,
             position: this.openPosition!,
@@ -316,6 +328,7 @@ export class PositionManager<
           });
         }
 
+        
         if (this.strategy.exitRule) {
           this.strategy.exitRule(this._exitPosition, {
             entryPrice: this.openPosition!.entryPrice,
@@ -349,7 +362,7 @@ export class PositionManager<
    *
    * @param options
    */
-  private _enterPosition(options?: IEnterPositionOptions) {
+  private _enterPosition = (options?: IEnterPositionOptions) => {
     assert(
       this.positionStatus === PositionStatus.None,
       "Can only enter a position when not already in one."
@@ -364,7 +377,7 @@ export class PositionManager<
   /**
    * User calls this function to exit a position on the instrument.
    */
-  private _exitPosition() {
+  private _exitPosition = () => {
     assert(
       this.positionStatus === PositionStatus.Position,
       "Can only exit a position when we are in a position."
