@@ -1,6 +1,7 @@
 const CBuffer = require("CBuffer");
 import { assert } from "chai";
 import { DataFrame } from "data-forge";
+import { EventEmitter } from "events";
 import { IBacktestOptions } from "./backtest";
 import { IBar } from "./bar";
 import { IPosition } from "./position";
@@ -14,12 +15,19 @@ export enum PositionStatus {
   Exit,
 }
 
+interface IEmissions {
+  connect: () => void;
+  enterPosition: (idk: any) => void
+  exitPosition: (idk: any) => void
+  complete: (idk: any) => void
+}
+
 export class PositionManager<
   InputBarT extends IBar,
   IndicatorBarT extends InputBarT,
   ParametersT,
   IndexT
-> {
+> extends EventEmitter {
   /** Status of the position at any give time. */
   private _positionStatus: PositionStatus = PositionStatus.None;
   public get positionStatus(): PositionStatus {
@@ -70,10 +78,16 @@ export class PositionManager<
     this._openPosition = position;
   }
 
+  private _untypedOn = this.on
+  private _untypedEmit = this.emit
+  public on = <K extends keyof IEmissions>(event: K, listener: IEmissions[K]): this => this._untypedOn(event, listener)
+  public emit = <K extends keyof IEmissions>(event: K, ...args: Parameters<IEmissions[K]>): boolean => this._untypedEmit(event, ...args)
+
   constructor(
     strategy: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>,
     options?: IBacktestOptions
   ) {
+    super();
     this.strategy = strategy;
     this.lookbackPeriod = this.strategy.lookbackPeriod || 1;
     this.lookbackBuffer = new CBuffer(this.lookbackPeriod);
@@ -84,8 +98,8 @@ export class PositionManager<
 
   /**
    * Add a bar and process to determine if a trade should execute
-   * @param bar 
-   * @returns 
+   * @param bar
+   * @returns
    */
   public addBar(bar: IndicatorBarT) {
     this.lookbackBuffer.push(bar);
@@ -93,10 +107,9 @@ export class PositionManager<
     if (this.lookbackBuffer.length < this.lookbackPeriod) {
       return; // Don't invoke rules until lookback period is satisfied.
     }
-    
+
     switch (+this.positionStatus) {
       case PositionStatus.None:
-        
         this.strategy.entryRule(this._enterPosition, {
           bar: bar,
           lookback: new DataFrame<number, IndicatorBarT>(
@@ -136,6 +149,8 @@ export class PositionManager<
           profitPct: 0,
           holdingPeriod: 0,
         };
+
+        this.emit('enterPosition', { lol: true });
 
         if (this.strategy.stopLoss) {
           const initialStopDistance = this.strategy.stopLoss({
@@ -239,7 +254,7 @@ export class PositionManager<
           this.openPosition !== null,
           "Expected open position to already be initialized!"
         );
-        
+
         if (this.openPosition!.curStopPrice !== undefined) {
           if (this.openPosition!.direction === TradeDirection.Long) {
             if (bar.low <= this.openPosition!.curStopPrice!) {
@@ -264,7 +279,6 @@ export class PositionManager<
           }
         }
 
-        
         // Revaluate trailing stop loss.
         if (this.strategy.trailingStopLoss !== undefined) {
           const trailingStopDistance = this.strategy.trailingStopLoss({
@@ -333,7 +347,6 @@ export class PositionManager<
           });
         }
 
-        
         if (this.strategy.exitRule) {
           this.strategy.exitRule(this._exitPosition, {
             entryPrice: this.openPosition!.entryPrice,
@@ -364,11 +377,16 @@ export class PositionManager<
 
   /**
    * Complete the position, adding the last trade if necessary
-   * @param lastBar 
+   * @param lastBar
    */
   public complete(lastBar: IndicatorBarT) {
     if (this.openPosition) {
-      const lastTrade = this.finalizePosition(this.openPosition, lastBar.time, lastBar.close, "finalize");
+      const lastTrade = this.finalizePosition(
+        this.openPosition,
+        lastBar.time,
+        lastBar.close,
+        "finalize"
+      );
       this.completedTrades.push(lastTrade);
     }
   }
@@ -388,7 +406,7 @@ export class PositionManager<
     this.positionDirection =
       (options && options.direction) || TradeDirection.Long;
     this.conditionalEntryPrice = options && options.entryPrice;
-  }
+  };
 
   /**
    * User calls this function to exit a position on the instrument.
@@ -400,7 +418,7 @@ export class PositionManager<
     );
 
     this.positionStatus = PositionStatus.Exit; // Exit position next bar.
-  }
+  };
 
   /**
    * Close the current open position.
