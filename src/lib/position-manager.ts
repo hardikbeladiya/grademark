@@ -357,6 +357,13 @@ export class PositionManager<
     }
   }
 
+  public complete(lastBar: IndicatorBarT) {
+    if (this.openPosition) {
+      const lastTrade = this.finalizePosition(this.openPosition, lastBar.time, lastBar.close, "finalize");
+      this.completedTrades.push(lastTrade);
+    }
+  }
+
   /**
    * User calls this function to enter a position on the instrument.
    *
