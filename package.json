@@ -19,7 +19,7 @@
         "tw": "npm run test:watch",
         "test:watch": "mocha --watch --watch-extensions ts --opts ./src/test/mocha.opts",
         "prepublishOnly": "npm run prepare",
-        "prepare": "npm run clean && npm run test && npm run build"
+        "prepare": "npm run clean && npm run build"
     },
     "repository": {
         "type": "git",
