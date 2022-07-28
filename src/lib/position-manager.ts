@@ -385,9 +385,10 @@ export class PositionManager<
         lastBar.close,
         "finalize"
       );
+      this.emit('exitPosition', { bar: lastBar, position: this.openPosition });
       this.completedTrades.push(lastTrade);
     }
-    this.emit('complete', this.completedTrades)
+    this.emit('complete', this.completedTrades);
   }
 
   /**
