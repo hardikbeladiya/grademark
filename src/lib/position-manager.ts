@@ -82,6 +82,11 @@ export class PositionManager<
     }
   }
 
+  /**
+   * Add a bar and process to determine if a trade should execute
+   * @param bar 
+   * @returns 
+   */
   public addBar(bar: IndicatorBarT) {
     this.lookbackBuffer.push(bar);
 
@@ -357,6 +362,10 @@ export class PositionManager<
     }
   }
 
+  /**
+   * Complete the position, adding the last trade if necessary
+   * @param lastBar 
+   */
   public complete(lastBar: IndicatorBarT) {
     if (this.openPosition) {
       const lastTrade = this.finalizePosition(this.openPosition, lastBar.time, lastBar.close, "finalize");
