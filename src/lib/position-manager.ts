@@ -16,8 +16,8 @@ export enum PositionStatus {
 }
 
 interface IEmissions {
-  enterPosition: (data: { bar: IBar, position: IPosition }) => void
-  exitPosition: (data: { bar: IBar, position: IPosition }) => void
+  enterPosition: (data: { price: number, bar: IBar, position: IPosition }) => void
+  exitPosition: (data: { price: number, bar: IBar, position: IPosition }) => void
   complete: (trades: ITrade[]) => void
 }
 
@@ -243,7 +243,7 @@ export class PositionManager<
               : entryPrice - profitDistance;
         }
 
-        this.emit('enterPosition', { bar, position: this.openPosition });
+        this.emit('enterPosition', { price: entryPrice, bar, position: this.openPosition });
         this.positionStatus = PositionStatus.Position;
         break;
 
@@ -365,6 +365,8 @@ export class PositionManager<
           "Expected open position to already be initialized!"
         );
 
+        // NOTE: this happens on the NEXT bar
+        // but it uses the open price (the closing of the last bar)
         this._closePosition(bar, bar.open, "exit-rule");
         break;
 
@@ -385,7 +387,7 @@ export class PositionManager<
         lastBar.close,
         "finalize"
       );
-      this.emit('exitPosition', { bar: lastBar, position: this.openPosition });
+      this.emit('exitPosition', { price: lastBar.close, bar: lastBar, position: this.openPosition });
       this.completedTrades.push(lastTrade);
     }
     this.emit('complete', this.completedTrades);
@@ -430,9 +432,10 @@ export class PositionManager<
   private _closePosition(
     bar: InputBarT,
     exitPrice: number,
-    exitReason: string
+    exitReason: string,
   ) {
-    this.emit('exitPosition', { bar, position: this.openPosition! });
+    this.emit('exitPosition', { price: exitPrice, bar, position: this.openPosition! });
+
     const trade = this.finalizePosition(
       this.openPosition!,
       bar.time,
