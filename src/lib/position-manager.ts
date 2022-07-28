@@ -511,5 +511,7 @@ export class PositionManager<
       position.curRMultiple = position.profit / unitRisk;
     }
     position.holdingPeriod += 1;
+    
+    this.openPosition = position;
   }
 }
