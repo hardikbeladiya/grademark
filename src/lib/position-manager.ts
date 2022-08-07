@@ -16,9 +16,19 @@ export enum PositionStatus {
 }
 
 interface IEmissions {
-  enterPosition: (data: { price: number, bar: IBar, position: IPosition }) => void
-  exitPosition: (data: { price: number, bar: IBar, position: IPosition }) => void
-  complete: (trades: ITrade[]) => void
+  enterPosition: (data: {
+    price: number;
+    bar: IBar;
+    position: IPosition;
+    message: string;
+  }) => void;
+  exitPosition: (data: {
+    price: number;
+    bar: IBar;
+    position: IPosition;
+    message: string;
+  }) => void;
+  complete: (trades: ITrade[]) => void;
 }
 
 export class PositionManager<
@@ -56,7 +66,12 @@ export class PositionManager<
   }
 
   private _strategy!: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>;
-  public get strategy(): IStrategy<InputBarT,IndicatorBarT,ParametersT,IndexT> {
+  public get strategy(): IStrategy<
+    InputBarT,
+    IndicatorBarT,
+    ParametersT,
+    IndexT
+  > {
     return this._strategy;
   }
   public set strategy(
@@ -77,10 +92,16 @@ export class PositionManager<
     this._openPosition = position;
   }
 
-  private _untypedOn = this.on
-  private _untypedEmit = this.emit
-  public on = <K extends keyof IEmissions>(event: K, listener: IEmissions[K]): this => this._untypedOn(event, listener)
-  public emit = <K extends keyof IEmissions>(event: K, ...args: Parameters<IEmissions[K]>): boolean => this._untypedEmit(event, ...args)
+  private _untypedOn = this.on;
+  private _untypedEmit = this.emit;
+  public on = <K extends keyof IEmissions>(
+    event: K,
+    listener: IEmissions[K]
+  ): this => this._untypedOn(event, listener);
+  public emit = <K extends keyof IEmissions>(
+    event: K,
+    ...args: Parameters<IEmissions[K]>
+  ): boolean => this._untypedEmit(event, ...args);
 
   constructor(
     strategy: IStrategy<InputBarT, IndicatorBarT, ParametersT, IndexT>,
@@ -243,7 +264,12 @@ export class PositionManager<
               : entryPrice - profitDistance;
         }
 
-        this.emit('enterPosition', { price: entryPrice, bar, position: this.openPosition });
+        this.emit("enterPosition", {
+          price: entryPrice,
+          bar,
+          position: this.openPosition,
+          message: "enter",
+        });
         this.positionStatus = PositionStatus.Position;
         break;
 
@@ -379,18 +405,23 @@ export class PositionManager<
    * Complete the position, adding the last trade if necessary
    * @param lastBar
    */
-  public complete(lastBar: IndicatorBarT) {
+  public complete(lastBar: IndicatorBarT, message = "finalize") {
     if (this.openPosition) {
       const lastTrade = this.finalizePosition(
         this.openPosition,
         lastBar.time,
         lastBar.close,
-        "finalize"
+        message
       );
-      this.emit('exitPosition', { price: lastBar.close, bar: lastBar, position: this.openPosition });
+      this.emit("exitPosition", {
+        price: lastBar.close,
+        bar: lastBar,
+        position: this.openPosition,
+        message,
+      });
       this.completedTrades.push(lastTrade);
     }
-    this.emit('complete', this.completedTrades);
+    this.emit("complete", this.completedTrades);
   }
 
   /**
@@ -432,9 +463,14 @@ export class PositionManager<
   private _closePosition(
     bar: InputBarT,
     exitPrice: number,
-    exitReason: string,
+    exitReason: string
   ) {
-    this.emit('exitPosition', { price: exitPrice, bar, position: this.openPosition! });
+    this.emit("exitPosition", {
+      price: exitPrice,
+      bar,
+      position: this.openPosition!,
+      message: exitReason,
+    });
 
     const trade = this.finalizePosition(
       this.openPosition!,
@@ -514,7 +550,7 @@ export class PositionManager<
       position.curRMultiple = position.profit / unitRisk;
     }
     position.holdingPeriod += 1;
-    
+
     this.openPosition = position;
   }
 }
