@@ -1,8 +1,9 @@
 import { ITrade } from "./trade";
-import * as math from 'mathjs';
-import { IAnalysis } from "./analysis";
-import { isNumber, isArray } from "./utils";
+
 import { Series } from "data-forge";
+import { abs, max, min, std } from 'mathjs';
+import { IAnalysis } from "./analysis";
+import { isArray, isNumber } from "./utils";
 
 /**
  * Analyse a sequence of trades and compute their performance.
@@ -33,7 +34,7 @@ export function analyze(startingCapital: number, trades: ITrade[]): IAnalysis {
     for (const trade of trades) {
         ++totalTrades;
         if (trade.riskPct !== undefined) {
-            maxRiskPct = Math.max(trade.riskPct, maxRiskPct || 0);
+            maxRiskPct = max(trade.riskPct, maxRiskPct || 0);
         }
         
         workingCapital *= trade.growth;
@@ -56,8 +57,8 @@ export function analyze(startingCapital: number, trades: ITrade[]): IAnalysis {
             ++numLosingTrades;
         }
 
-        maxDrawdown = Math.min(workingDrawdown, maxDrawdown);
-        maxDrawdownPct = Math.min((maxDrawdown / peakCapital) * 100, maxDrawdownPct);
+        maxDrawdown = min(workingDrawdown, maxDrawdown);
+        maxDrawdownPct = min((maxDrawdown / peakCapital) * 100, maxDrawdownPct);
     }
 
    const rmultiples = trades
@@ -66,12 +67,12 @@ export function analyze(startingCapital: number, trades: ITrade[]): IAnalysis {
 
     const expectency = rmultiples.length > 0 ? new Series(rmultiples).average() : undefined;
     const rmultipleStdDev = rmultiples.length > 0
-        ? math.std(rmultiples)
+        ? std(rmultiples, 'unbiased')
         : undefined;
     
     let systemQuality: number | undefined;
     if (expectency !== undefined && rmultipleStdDev !== undefined) {
-        if (rmultipleStdDev === 0) {
+        if (rmultipleStdDev === undefined) {
             systemQuality = undefined;
         }
         else {
@@ -80,7 +81,7 @@ export function analyze(startingCapital: number, trades: ITrade[]): IAnalysis {
     }
 
     let profitFactor: number | undefined = undefined;
-    const absTotalLosses = Math.abs(totalLosses);
+    const absTotalLosses = abs(totalLosses);
     if (absTotalLosses > 0) {
         profitFactor = totalProfits / absTotalLosses;
     }

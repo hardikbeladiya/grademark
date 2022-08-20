@@ -350,6 +350,113 @@ describe("backtest long", () => {
         expect(singleTrade.exitReason).to.eql("finalize");
         expect(singleTrade.exitTime).to.eql(makeDate("2018/10/24"));
     });
+
+    it("trailing stop loss does not trigger because profit target is not met", () => {
+        
+        const strategy: IStrategy = {
+            entryRule: unconditionalLongEntry,
+            trailingStopLoss: args => {
+                // Trigger trailing stop when close is 20% gte entryPrice
+                const triggerMinPrice = args.entryPrice * (1 + (20/100));
+                if (args.bar.close >= triggerMinPrice) {
+                    return args.bar.close * (2/100);
+                } else {
+                    return Infinity;
+                }
+            }
+        };
+
+        const inputSeries = makeDataSeries([
+            { time: "2018/10/20", close: 100 },
+            { time: "2018/10/21", close: 110 }, // Entry day
+            { time: "2018/10/22", close: 100 }, // Hold
+            { time: "2018/10/23", close: 90 },  // Hold
+            { time: "2018/10/24", close: 82 },  // Final bar Exit
+        ]);
+
+        const trades = backtest(strategy, inputSeries);
+        expect(trades.length).to.eql(1);
+
+        const singleTrade = trades[0];
+        expect(singleTrade.exitReason).to.eql("finalize");
+        expect(singleTrade.exitTime).to.eql(makeDate("2018/10/24"));
+    });
+
+    it("trailing stop loss is not triggered until profit target is hit", () => {
+        
+        const strategy: IStrategy = {
+            entryRule: unconditionalLongEntry,
+            trailingStopLoss: args => {
+                // Trigger trailing stop when close is 20% gte entryPrice
+                const triggerMinPrice = args.entryPrice * (1 + (20/100));
+                if (args.bar.close >= triggerMinPrice) {
+                    return args.bar.close * (2/100);
+                } else {
+                    return Infinity;
+                }
+            }
+        };
+
+        const inputSeries = makeDataSeries([
+            { time: "2018/10/20", close: 100 },
+            { time: "2018/10/21", close: 100 }, // Entry day
+            { time: "2018/10/22", close: 120 }, // Hold, hit profit target
+            { time: "2018/10/23", close: 118 }, // Hold
+            { time: "2018/10/24", close: 118 }, // Hold
+            { time: "2018/10/25", close: 118 }, // Hold
+            { time: "2018/10/26", close: 90 },  // Exit at 117.6
+            { time: "2018/10/27", close: 82 }, 
+        ]);
+
+        const trades = backtest(strategy, inputSeries);
+        expect(trades.length).to.eql(1);
+
+        const singleTrade = trades[0];
+        expect(singleTrade.exitReason).to.eql("stop-loss");
+        expect(singleTrade.exitPrice).to.eql(117.6);
+        expect(singleTrade.exitTime).to.eql(makeDate("2018/10/26"));
+    });
+
+    it("trailing stop loss with traditional stop loss", () => {
+        
+        const strategy: IStrategy = {
+            entryRule: unconditionalLongEntry,
+            stopLoss: args => args.entryPrice * (1.5/100),
+            trailingStopLoss: args => {
+                // Trigger trailing stop when close is 10% gte entryPrice
+                const triggerMinPrice = args.entryPrice * (1 + (10/100));
+                if (args.bar.close >= triggerMinPrice) {
+                    return args.bar.close * (2/100);
+                } else {
+                    return Infinity;
+                }
+            }
+        };
+
+        const inputSeries = makeDataSeries([
+            { time: "2018/10/20", close: 100 },
+            { time: "2018/10/21", close: 100 }, // Entry day
+            { time: "2018/10/22", close: 98 },  // Exit traditional stop
+            { time: "2018/10/23", close: 110 }, 
+            { time: "2018/10/24", close: 120 }, // Entry Day
+            { time: "2018/10/25", close: 140 }, // Hit profit target
+            { time: "2018/10/26", close: 130 }, // Exit at 137.2 
+        ]);
+
+        const trades = backtest(strategy, inputSeries);
+        console.log(trades);
+        expect(trades.length).to.eql(2);
+        
+        const firstTrade = trades[0];
+        expect(firstTrade.exitReason).to.eql("stop-loss");
+        expect(firstTrade.exitPrice).to.eql(98.5);
+        expect(firstTrade.exitTime).to.eql(makeDate("2018/10/22"));
+
+        const secondTrade = trades[1];
+        expect(secondTrade.exitReason).to.eql("stop-loss");
+        expect(secondTrade.exitPrice).to.eql(137.2);
+        expect(secondTrade.exitTime).to.eql(makeDate("2018/10/26"));
+    });
     
     it("can place intrabar conditional long order", () => {
         

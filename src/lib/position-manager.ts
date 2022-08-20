@@ -197,10 +197,12 @@ export class PositionManager<
             ),
             parameters: this.strategyParameters,
           });
+
           const trailingStopPrice =
             this.openPosition.direction === TradeDirection.Long
               ? entryPrice - trailingStopDistance
               : entryPrice + trailingStopDistance;
+
           if (this.openPosition.initialStopPrice === undefined) {
             this.openPosition.initialStopPrice = trailingStopPrice;
           } else {
@@ -233,8 +235,10 @@ export class PositionManager<
             this.openPosition.direction === TradeDirection.Long
               ? entryPrice - this.openPosition.curStopPrice
               : this.openPosition.curStopPrice - entryPrice;
+
           this.openPosition.initialRiskPct =
             (this.openPosition.initialUnitRisk / entryPrice) * 100;
+            
           this.openPosition.curRiskPct = this.openPosition.initialRiskPct;
           this.openPosition.curRMultiple = 0;
 
@@ -478,7 +482,9 @@ export class PositionManager<
       exitPrice,
       exitReason
     );
+
     this.completedTrades.push(trade!);
+    
     // Reset to no open position;
     this.openPosition = null;
     this.positionStatus = PositionStatus.None;
