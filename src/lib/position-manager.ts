@@ -2,6 +2,7 @@ const CBuffer = require("CBuffer");
 import { assert } from "chai";
 import { DataFrame } from "data-forge";
 import { EventEmitter } from "events";
+import { max, min } from "mathjs";
 import { IBacktestOptions } from "./backtest";
 import { IBar } from "./bar";
 import { IPosition } from "./position";
@@ -56,6 +57,8 @@ export class PositionManager<
   public completedTrades: ITrade[] = [];
   /** Create a circular buffer to use for the lookback. */
   public lookbackBuffer = new CBuffer(1);
+  /** Keep track of the highest price while in a position */
+  public highestPrice: number = 0;
 
   private _options: IBacktestOptions = {};
   public get options(): IBacktestOptions {
@@ -168,6 +171,7 @@ export class PositionManager<
           profit: 0,
           profitPct: 0,
           holdingPeriod: 0,
+          maxPriceRecorded: entryPrice
         };
 
         if (this.strategy.stopLoss) {
@@ -282,6 +286,13 @@ export class PositionManager<
           this.openPosition !== null,
           "Expected open position to already be initialized!"
         );
+
+        // Update the highest/lowest price
+        if (this.openPosition!.direction === TradeDirection.Long) {
+          this.openPosition!.maxPriceRecorded = max(bar.high, this.openPosition!.maxPriceRecorded);
+        } else {
+          this.openPosition!.maxPriceRecorded = min(bar.low, this.openPosition!.maxPriceRecorded);
+        }
 
         if (this.openPosition!.curStopPrice !== undefined) {
           if (this.openPosition!.direction === TradeDirection.Long) {

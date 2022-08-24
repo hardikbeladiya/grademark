@@ -1,5 +1,5 @@
-import { ITimestampedValue } from "./trade";
 import { TradeDirection } from "./strategy";
+import { ITimestampedValue } from "./trade";
 
 /**
  * Interface that defines an open position.
@@ -86,4 +86,9 @@ export interface IPosition {
      * Profit target where exit is triggered (intrabar).
      */
     profitTarget?: number;
+
+    /**
+     * Highest price recorded while in an entry
+     */
+    maxPriceRecorded: number;
 }
