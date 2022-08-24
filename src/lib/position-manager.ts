@@ -542,6 +542,7 @@ export class PositionManager<
       stopPrice: position.initialStopPrice,
       stopPriceSeries: position.stopPriceSeries,
       profitTarget: position.profitTarget,
+      maxPriceRecorded: position.maxPriceRecorded
     };
   }
 

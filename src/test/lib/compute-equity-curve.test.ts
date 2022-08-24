@@ -1,8 +1,7 @@
-import { assert, expect } from 'chai';
-import { computeEquityCurve } from '../../lib/compute-equity-curve';
-import { DataFrame, IDataFrame } from 'data-forge';
+import { expect } from 'chai';
 import * as moment from 'dayjs';
 import { ITrade } from '../..';
+import { computeEquityCurve } from '../../lib/compute-equity-curve';
 import { TradeDirection } from '../../lib/strategy';
 
 describe("compute equity curve", () => {
@@ -32,6 +31,7 @@ describe("compute equity curve", () => {
             growth: growth,
             holdingPeriod: 5,
             exitReason: "Sell",
+            maxPriceRecorded: 10
         };
 
         const startingCapital = 100;
@@ -54,6 +54,7 @@ describe("compute equity curve", () => {
             growth: growth,
             holdingPeriod: 4,
             exitReason: "Sell",
+            maxPriceRecorded: 10
         };
 
         const startingCapital = 100;
@@ -78,6 +79,7 @@ describe("compute equity curve", () => {
                 growth: growth1,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
             {
                 direction: TradeDirection.Long,
@@ -90,6 +92,7 @@ describe("compute equity curve", () => {
                 growth: growth2,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
         ];
 
@@ -116,6 +119,7 @@ describe("compute equity curve", () => {
                 growth: growth1,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
             {
                 direction: TradeDirection.Long,
@@ -128,6 +132,7 @@ describe("compute equity curve", () => {
                 growth: growth2,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
         ];
 
@@ -154,6 +159,7 @@ describe("compute equity curve", () => {
                 growth: growth1,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
             {
                 direction: TradeDirection.Long,
@@ -166,6 +172,7 @@ describe("compute equity curve", () => {
                 growth: growth2,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
         ];
 
@@ -192,6 +199,7 @@ describe("compute equity curve", () => {
                 growth: growth1,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
             {
                 direction: TradeDirection.Long,
@@ -204,6 +212,7 @@ describe("compute equity curve", () => {
                 growth: growth2,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
         ];
 

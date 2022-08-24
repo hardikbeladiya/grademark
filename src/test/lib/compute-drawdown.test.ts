@@ -1,8 +1,7 @@
-import { assert, expect } from 'chai';
-import { computeDrawdown } from '../../lib/compute-drawdown';
-import { DataFrame, IDataFrame } from 'data-forge';
+import { expect } from 'chai';
 import * as moment from 'dayjs';
 import { ITrade } from '../..';
+import { computeDrawdown } from '../../lib/compute-drawdown';
 import { TradeDirection } from '../../lib/strategy';
 
 describe("compute drawdown", () => {
@@ -31,6 +30,7 @@ describe("compute drawdown", () => {
             growth: 2,
             holdingPeriod: 5,
             exitReason: "Sell",
+            maxPriceRecorded: 10
         };
 
         const drawdown = computeDrawdown(10, [ singleTrade ]);
@@ -51,6 +51,7 @@ describe("compute drawdown", () => {
             growth: 0.5,
             holdingPeriod: 4,
             exitReason: "Sell",
+            maxPriceRecorded: 10
         };
 
         const drawdown = computeDrawdown(10, [ singleTrade ]);
@@ -72,6 +73,7 @@ describe("compute drawdown", () => {
                 growth: 2,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
             {
                 direction: TradeDirection.Long,
@@ -84,6 +86,7 @@ describe("compute drawdown", () => {
                 growth: 3,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
         ];
 
@@ -107,6 +110,7 @@ describe("compute drawdown", () => {
                 growth: 0.5,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
             {
                 direction: TradeDirection.Long,
@@ -119,6 +123,7 @@ describe("compute drawdown", () => {
                 growth: 0.8,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
         ];
 
@@ -142,6 +147,7 @@ describe("compute drawdown", () => {
                 growth: 2,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
             {
                 direction: TradeDirection.Long,
@@ -154,6 +160,7 @@ describe("compute drawdown", () => {
                 growth: 0.5,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
         ];
 
@@ -177,6 +184,7 @@ describe("compute drawdown", () => {
                 growth: 0.5,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
             {
                 direction: TradeDirection.Long,
@@ -189,6 +197,7 @@ describe("compute drawdown", () => {
                 growth: 2,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
         ];
 
@@ -212,6 +221,7 @@ describe("compute drawdown", () => {
                 growth: 0.5,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 20
             },
             {
                 direction: TradeDirection.Long,
@@ -224,6 +234,7 @@ describe("compute drawdown", () => {
                 growth: 3,
                 holdingPeriod: 10,
                 exitReason: "Sell",
+                maxPriceRecorded: 10
             },
             {
                 direction: TradeDirection.Long,
@@ -236,6 +247,7 @@ describe("compute drawdown", () => {
                 growth: 0.5,
                 holdingPeriod: 5,
                 exitReason: "Sell",
+                maxPriceRecorded: 30
             },
         ];
 

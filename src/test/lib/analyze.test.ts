@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { analyze } from '../../lib/analyze';
 import * as moment from 'dayjs';
 import { ITrade } from '../..';
+import { analyze } from '../../lib/analyze';
 import { TradeDirection } from '../../lib/strategy';
 
 describe("analyze", () => {
@@ -63,6 +63,7 @@ describe("analyze", () => {
         rmultiple: undefined,
         holdingPeriod: 5,
         exitReason: "Sell",
+        maxPriceRecorded: 0
     };
 
     it("can analyze single trade with profit", () => {
@@ -89,6 +90,7 @@ describe("analyze", () => {
         rmultiple: undefined,
         holdingPeriod: 4,
         exitReason: "Sell",
+        maxPriceRecorded: 0
     };
 
     it("can analyze single trade with loss", () => {
@@ -116,6 +118,7 @@ describe("analyze", () => {
             rmultiple: undefined,
             holdingPeriod: 5,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
         {
             direction: TradeDirection.Long,
@@ -130,6 +133,7 @@ describe("analyze", () => {
             rmultiple: undefined,
             holdingPeriod: 10,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
     ];
 
@@ -158,6 +162,7 @@ describe("analyze", () => {
             rmultiple: undefined,
             holdingPeriod: 5,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
         {
             direction: TradeDirection.Long,
@@ -172,6 +177,7 @@ describe("analyze", () => {
             rmultiple: undefined,
             holdingPeriod: 10,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
     ];
 
@@ -200,6 +206,7 @@ describe("analyze", () => {
             rmultiple: undefined,
             holdingPeriod: 5,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
         {
             direction: TradeDirection.Long,
@@ -214,6 +221,7 @@ describe("analyze", () => {
             rmultiple: undefined,
             holdingPeriod: 10,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
     ];
 
@@ -242,6 +250,7 @@ describe("analyze", () => {
             rmultiple: undefined,
             holdingPeriod: 5,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
         {
             direction: TradeDirection.Long,
@@ -256,6 +265,7 @@ describe("analyze", () => {
             rmultiple: undefined,
             holdingPeriod: 10,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
     ];
 
@@ -305,6 +315,7 @@ describe("analyze", () => {
             rmultiple: -1,
             holdingPeriod: 5,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
         {
             direction: TradeDirection.Long,
@@ -319,6 +330,7 @@ describe("analyze", () => {
             rmultiple: 4,
             holdingPeriod: 10,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
         {
             direction: TradeDirection.Long,
@@ -332,7 +344,7 @@ describe("analyze", () => {
             riskPct: 50,
             rmultiple: -1,
             holdingPeriod: 5,
-            exitReason: "Sell",
+            exitReason: "Sell",maxPriceRecorded: 0
         },
     ];
 
@@ -349,7 +361,7 @@ describe("analyze", () => {
             riskPct: 50,
             rmultiple: -1,
             holdingPeriod: 5,
-            exitReason: "Sell",
+            exitReason: "Sell",maxPriceRecorded: 0
         },
         {
             direction: TradeDirection.Long,
@@ -364,6 +376,7 @@ describe("analyze", () => {
             rmultiple: 4,
             holdingPeriod: 10,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
         {
             direction: TradeDirection.Long,
@@ -378,6 +391,7 @@ describe("analyze", () => {
             rmultiple: -1,
             holdingPeriod: 5,
             exitReason: "Sell",
+            maxPriceRecorded: 0
         },
     ];
 
