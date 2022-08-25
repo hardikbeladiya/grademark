@@ -57,8 +57,6 @@ export class PositionManager<
   public completedTrades: ITrade[] = [];
   /** Create a circular buffer to use for the lookback. */
   public lookbackBuffer = new CBuffer(1);
-  /** Keep track of the highest price while in a position */
-  public highestPrice: number = 0;
 
   private _options: IBacktestOptions = {};
   public get options(): IBacktestOptions {
@@ -171,8 +169,17 @@ export class PositionManager<
           profit: 0,
           profitPct: 0,
           holdingPeriod: 0,
-          maxPriceRecorded: entryPrice
+          maxPriceRecorded: 0
         };
+
+        // Set the highest price recorded as this bar's top / bottom
+        if (this.openPosition!.direction === TradeDirection.Long) {
+          const top = bar.close > bar.open ? bar.close : bar.open;
+          this.openPosition!.maxPriceRecorded = max(top, this.openPosition!.maxPriceRecorded);
+        } else {
+          const bottom = bar.close > bar.open ? bar.open : bar.close;
+          this.openPosition!.maxPriceRecorded = min(bottom, this.openPosition!.maxPriceRecorded);
+        }
 
         if (this.strategy.stopLoss) {
           const initialStopDistance = this.strategy.stopLoss({
@@ -287,17 +294,22 @@ export class PositionManager<
           "Expected open position to already be initialized!"
         );
 
+        // For green or red bars, us the top or the bottom
+        const top =     bar.close > bar.open ? bar.close : bar.open;
+        const bottom =  bar.close < bar.open ? bar.close : bar.open;
+
         // Update the highest/lowest price
         if (this.openPosition!.direction === TradeDirection.Long) {
-          this.openPosition!.maxPriceRecorded = max(bar.high, this.openPosition!.maxPriceRecorded);
+          this.openPosition!.maxPriceRecorded = max(top, this.openPosition!.maxPriceRecorded);
         } else {
-          this.openPosition!.maxPriceRecorded = min(bar.low, this.openPosition!.maxPriceRecorded);
+          
+          this.openPosition!.maxPriceRecorded = min(bottom, this.openPosition!.maxPriceRecorded);
         }
 
+        // Exit intrabar due to stop loss.
         if (this.openPosition!.curStopPrice !== undefined) {
           if (this.openPosition!.direction === TradeDirection.Long) {
-            if (bar.low <= this.openPosition!.curStopPrice!) {
-              // Exit intrabar due to stop loss.
+            if (bottom <= this.openPosition!.curStopPrice!) {
               this._closePosition(
                 bar,
                 this.openPosition!.curStopPrice!,
@@ -306,8 +318,7 @@ export class PositionManager<
               break;
             }
           } else {
-            if (bar.high >= this.openPosition!.curStopPrice!) {
-              // Exit intrabar due to stop loss.
+            if (top >= this.openPosition!.curStopPrice!) {
               this._closePosition(
                 bar,
                 this.openPosition!.curStopPrice!,
@@ -331,12 +342,12 @@ export class PositionManager<
           });
 
           if (this.openPosition!.direction === TradeDirection.Long) {
-            const newTrailingStopPrice = bar.close - trailingStopDistance;
+            const newTrailingStopPrice = this.openPosition!.maxPriceRecorded - trailingStopDistance;
             if (newTrailingStopPrice > this.openPosition!.curStopPrice!) {
               this.openPosition!.curStopPrice = newTrailingStopPrice;
             }
           } else {
-            const newTrailingStopPrice = bar.close + trailingStopDistance;
+            const newTrailingStopPrice = this.openPosition!.maxPriceRecorded + trailingStopDistance;
             if (newTrailingStopPrice < this.openPosition!.curStopPrice!) {
               this.openPosition!.curStopPrice = newTrailingStopPrice;
             }
@@ -349,6 +360,29 @@ export class PositionManager<
             });
           }
         }
+
+        // // Check again for trailing stop
+        // if (this.openPosition!.curStopPrice !== undefined) {
+        //   if (this.openPosition!.direction === TradeDirection.Long) {
+        //     if (bottom <= this.openPosition!.curStopPrice!) {
+        //       this._closePosition(
+        //         bar,
+        //         this.openPosition!.curStopPrice!,
+        //         "trailing-stop-loss"
+        //       );
+        //       break;
+        //     }
+        //   } else {
+        //     if (top >= this.openPosition!.curStopPrice!) {
+        //       this._closePosition(
+        //         bar,
+        //         this.openPosition!.curStopPrice!,
+        //         "trailing-stop-loss"
+        //       );
+        //       break;
+        //     }
+        //   }
+        // }
 
         if (this.openPosition!.profitTarget !== undefined) {
           if (this.openPosition!.direction === TradeDirection.Long) {

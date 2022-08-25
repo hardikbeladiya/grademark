@@ -15,9 +15,9 @@
         "build:watch": "tsc --watch",
         "clean-build:watch": "rimraf build/* && tsc --watch",
         "t": "npm run test",
-        "test": "nyc mocha --opts ./src/test/mocha.opts",
+        "test": "nyc mocha --require ts-node/register --recursive \"./src/test/**/*.test.ts\"",
         "tw": "npm run test:watch",
-        "test:watch": "mocha --watch --watch-extensions ts --opts ./src/test/mocha.opts",
+        "test:watch": "mocha --watch --watch-extensions ts --config=.mocharc.json",
         "prepublishOnly": "npm run clean && npm run test && npm run build",
         "prepare": "npm run clean && npm run build",
         "test-specific": "npm run test -- --grep \"current risk rises as profit increases\""
