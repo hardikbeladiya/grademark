@@ -435,10 +435,10 @@ export class PositionManager<
         break;
 
       case PositionStatus.Exit:
-        assert(
-          this.openPosition !== null,
-          "Expected open position to already be initialized!"
-        );
+        // assert(
+        //   this.openPosition !== null,
+        //   "Expected open position to already be initialized!"
+        // );
 
         // NOTE: moved this._closePosition for exit-rule to the this._exitPosition
         // function. This allows it to operate like any stop loss does - on the same bar.
@@ -509,7 +509,7 @@ export class PositionManager<
     // works, and to not have the user pass in the bar they want to exit in, we can use the 
     // lookback buffer last known bar. This also used to use the bar.open (since it happened on the
     // next bar), which it will now use the bar close - since it's on the current bar
-    const lastBar = this.lookbackBuffer.data.last;
+    let lastBar = this.lookbackBuffer.last();
 
     this._closePosition(lastBar, lastBar.close, "exit-rule");
 
