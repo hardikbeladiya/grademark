@@ -440,9 +440,11 @@ export class PositionManager<
           "Expected open position to already be initialized!"
         );
 
-        // NOTE: this happens on the NEXT bar
-        // but it uses the open price (the closing of the last bar)
-        this._closePosition(bar, bar.open, "exit-rule");
+        // NOTE: moved this._closePosition for exit-rule to the this._exitPosition
+        // function. This allows it to operate like any stop loss does - on the same bar.
+        // As this get switch statement gets called on the next bar, the exit rule will be called
+        // but the emit doesn't happen until a bar later - when the manager receives a closed bar.
+
         break;
 
       default:
@@ -462,14 +464,17 @@ export class PositionManager<
         lastBar.close,
         message
       );
+
       this.emit("exitPosition", {
         price: lastBar.close,
         bar: lastBar,
         position: this.openPosition,
         message,
       });
+
       this.completedTrades.push(lastTrade);
     }
+
     this.emit("complete", this.completedTrades);
   }
 
@@ -498,6 +503,15 @@ export class PositionManager<
       this.positionStatus === PositionStatus.Position,
       "Can only exit a position when we are in a position."
     );
+
+    // NOTE: to get this to exit on the current bar, we needed to throw it in the exit position
+    // function the user calls from their strategy. But in order to not break how that function
+    // works, and to not have the user pass in the bar they want to exit in, we can use the 
+    // lookback buffer last known bar. This also used to use the bar.open (since it happened on the
+    // next bar), which it will now use the bar close - since it's on the current bar
+    const lastBar = this.lookbackBuffer.data.last;
+
+    this._closePosition(lastBar, lastBar.close, "exit-rule");
 
     this.positionStatus = PositionStatus.Exit; // Exit position next bar.
   };
