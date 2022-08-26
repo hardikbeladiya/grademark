@@ -511,9 +511,11 @@ export class PositionManager<
     // next bar), which it will now use the bar close - since it's on the current bar
     let lastBar = this.lookbackBuffer.last();
 
-    this._closePosition(lastBar, lastBar.close, "exit-rule");
+    // Old code to exit on next bar
+    // this.positionStatus = PositionStatus.Exit; // Exit position next bar.
 
-    this.positionStatus = PositionStatus.Exit; // Exit position next bar.
+    // This sets the positionStatus to None, which exits on this current bar
+    this._closePosition(lastBar, lastBar.close, "exit-rule");
   };
 
   /**
