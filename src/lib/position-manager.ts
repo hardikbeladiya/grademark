@@ -51,6 +51,8 @@ export class PositionManager<
   public positionDirection: TradeDirection = TradeDirection.Long;
   /** Records the price for conditional intrabar entry. */
   public conditionalEntryPrice: number | undefined;
+  /** The strategy can tell the position what reason it entered a position */
+  public entryReason: string = 'entry-rule';
   /** Strategy lookback period. */
   public lookbackPeriod = 1;
   /** Tracks trades that have been closed. */
@@ -165,6 +167,7 @@ export class PositionManager<
           direction: this.positionDirection,
           entryTime: bar.time,
           entryPrice: entryPrice,
+          entryReason: this.entryReason,
           growth: 1,
           profit: 0,
           profitPct: 0,
@@ -302,7 +305,6 @@ export class PositionManager<
         if (this.openPosition!.direction === TradeDirection.Long) {
           this.openPosition!.maxPriceRecorded = max(top, this.openPosition!.maxPriceRecorded);
         } else {
-          
           this.openPosition!.maxPriceRecorded = min(bottom, this.openPosition!.maxPriceRecorded);
         }
 
@@ -360,29 +362,6 @@ export class PositionManager<
             });
           }
         }
-
-        // // Check again for trailing stop
-        // if (this.openPosition!.curStopPrice !== undefined) {
-        //   if (this.openPosition!.direction === TradeDirection.Long) {
-        //     if (bottom <= this.openPosition!.curStopPrice!) {
-        //       this._closePosition(
-        //         bar,
-        //         this.openPosition!.curStopPrice!,
-        //         "trailing-stop-loss"
-        //       );
-        //       break;
-        //     }
-        //   } else {
-        //     if (top >= this.openPosition!.curStopPrice!) {
-        //       this._closePosition(
-        //         bar,
-        //         this.openPosition!.curStopPrice!,
-        //         "trailing-stop-loss"
-        //       );
-        //       break;
-        //     }
-        //   }
-        // }
 
         if (this.openPosition!.profitTarget !== undefined) {
           if (this.openPosition!.direction === TradeDirection.Long) {
@@ -490,9 +469,9 @@ export class PositionManager<
     );
 
     this.positionStatus = PositionStatus.Enter; // Enter position next bar.
-    this.positionDirection =
-      (options && options.direction) || TradeDirection.Long;
+    this.positionDirection = (options && options.direction) || TradeDirection.Long;
     this.conditionalEntryPrice = options && options.entryPrice;
+    this.entryReason = (options && options.reason) || this.entryReason;
   };
 
   /**
@@ -560,7 +539,7 @@ export class PositionManager<
    */
   public finalizePosition(
     position: IPosition,
-    exitTime: Date,
+    exitTime: number | string,
     exitPrice: number,
     exitReason: string
   ): ITrade {
@@ -588,6 +567,7 @@ export class PositionManager<
       riskSeries: position.riskSeries,
       rmultiple: rmultiple,
       holdingPeriod: position.holdingPeriod,
+      entryReason: position.entryReason,
       exitReason: exitReason,
       stopPrice: position.initialStopPrice,
       stopPriceSeries: position.stopPriceSeries,

@@ -38,7 +38,7 @@ Your data needs to be loaded into memory in the following format:
   
 ```typescript
 interface IBar {
-    time: Date;
+    time: number | string; // exchanges return milliseconds or seconds, never a Date object, potentially a stringed date
     open: number;
     high: number;
     low: number;

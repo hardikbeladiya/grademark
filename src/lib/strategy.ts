@@ -1,5 +1,5 @@
-import { IBar } from "./bar";
 import { IDataFrame } from "data-forge";
+import { IBar } from "./bar";
 import { IPosition } from "./position";
 
 /**
@@ -36,6 +36,11 @@ export interface IEnterPositionOptions {
      *      Position will be opened in the bar after the bar where the low drops through this price.
      */
     entryPrice?: number;
+
+    /**
+     * Optionally provide a reason to the entry, such as an entry condition
+     */
+    reason?: string;
 }
 
 /**

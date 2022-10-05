@@ -7,7 +7,7 @@ export interface ITimestampedValue {
   /**
    * Timestamp of the value.
    */
-  time: Date;
+  time: number | string;
 
   /**
    * The value at the time.
@@ -28,7 +28,7 @@ export interface ITrade {
   /***
    * Timestamp when the position was entered.
    */
-  entryTime: Date;
+  entryTime: number | string;
 
   /**
    * Price when the position was entered.
@@ -38,7 +38,7 @@ export interface ITrade {
   /**
    * Timestamp when the position was exited.
    */
-  exitTime: Date;
+  exitTime: number | string;
 
   /**
    * Price when the position was exited.
@@ -79,6 +79,11 @@ export interface ITrade {
    * Number of bars the position was held for.
    */
   holdingPeriod: number;
+
+  /**
+   * The reason why we entered, defaults to 'entry-rule'
+   */
+  entryReason?: string;
 
   /**
    * The reason the position was exited.

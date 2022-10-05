@@ -15,12 +15,17 @@ export interface IPosition {
     /***
      * Timestamp when the position was entered.
      */
-    entryTime: Date;
+    entryTime: number | string;
 
     /**
      * Price when the position was entered.
      */
     entryPrice: number;
+
+    /**
+     * The reason why we entered, defaults to 'entry-rule'
+     */
+    entryReason?: string;
 
     /**
      * Net profit or loss.
