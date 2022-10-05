@@ -4,9 +4,9 @@
  */
 export interface IBar {
     /**
-     * Timestamp for the start of the bar.
+     * Timestamp for the start of the bar. We use numbers
      */
-    time: Date;
+    time: number;
 
     /**
      * Price at the open of the time period of the bar.
