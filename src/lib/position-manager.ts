@@ -528,6 +528,8 @@ export class PositionManager<
     // Reset to no open position;
     this.openPosition = null;
     this.positionStatus = PositionStatus.None;
+    const reason = trade.profit > 0 ? 'profit-target' : 'stop-loss';
+    this.strategy.onExistPosition && this.strategy.onExistPosition(bar, reason)
   }
 
   /**

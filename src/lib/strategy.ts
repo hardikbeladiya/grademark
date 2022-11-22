@@ -137,6 +137,16 @@ export interface IExitRuleArgs<BarT extends IBar, ParametersT> extends IOpenPosi
  */
 export type ExitRuleFn<BarT extends IBar, ParametersT = any> = (exitPosition: ExitPositionFn, args: IExitRuleArgs<BarT, ParametersT>) => void;
 
+
+export interface IOnExitRuleArgs<BarT extends IBar, ParametersT> {
+}
+
+
+/**
+ * Type for a function that defines an exit rule.
+ */
+export type OnExitPositionRuleFn<BarT extends IBar, ParametersT = any> = (args: IOnExitRuleArgs<BarT, ParametersT>, reason: string) => void;
+
 /**
  * A collection of key/value pairs for parameters.
  */
@@ -213,4 +223,7 @@ export interface IStrategy<InputBarT extends IBar = IBar, IndicatorsBarT extends
      * Return the amount of profit to trigger an exit.
      */
     profitTarget?: ProfitTargetFn<InputBarT, ParametersT>;
+    
+    
+    onExistPosition?: OnExitPositionRuleFn<InputBarT>;
 }
